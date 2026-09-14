@@ -4,8 +4,7 @@
  * Part of se3kit.
  */
 
-#ifndef SE3KIT_CONE_H
-#define SE3KIT_CONE_H
+#ifndef SE3KIT_CONE_H #define SE3KIT_CONE_H
 
 #include <stdbool.h>
 #include <math.h>
@@ -28,17 +27,14 @@
 // =============================================================================
 
 /**
- * @brief Spherical cone (conical sector) defined by a central Plücker axis line,
- *        a cached apex anchor, half-angle aperture, and spherical radial cutoff.
- *
- * Combines exact Plücker line geometry for screw/wrench calculations with
- * precomputed scalar projections for zero-sqrt, zero-division point queries.
+ * @brief Cone (conical sector) defined by a central Plücker axis line,
+ *        an apex point, a half-angle aperture, and spherical radial cutoff.
  */
 typedef struct {
-    se3_line_t axis;       // Central symmetry axis
-    float      cos_angle;  // Aperture as cos(half-angle)
-    float      range;      // Spherical radial cutoff (or INFINITY)
-    se3_vec3_t apex;       // Cached anchor point for fast point displacement
+    se3_line_t axis;            // Central symmetry axis
+    float      apex_coord;      // Apex coordinate (on the axis)
+    float      cos_half_angle;  // Aperture (as cosine of the half-angle)
+    float      range;           // Spherical radial cutoff (or +infinity)
 } se3_cone_t;
 
 // =============================================================================
