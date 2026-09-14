@@ -58,7 +58,8 @@ static inline float se3_quat_dot(se3_quat_t a, se3_quat_t b);       // a ⋅ b
 static inline se3_quat_t se3_quat_mul(se3_quat_t a, se3_quat_t b);  // a * b
 
 // Unary operations
-static inline float se3_quat_norm_sqr(se3_quat_t q);       // q ⋅ q
+static inline bool se3_quat_is_valid(se3_quat_t q);         // ‖q‖ == 1
+static inline float se3_quat_norm_sqr(se3_quat_t q);        // q ⋅ q
 static inline float se3_quat_norm(se3_quat_t q);            // √(q ⋅ q)
 static inline se3_quat_t se3_quat_negate(se3_quat_t q);     // q * -1
 static inline se3_quat_t se3_quat_conjugate(se3_quat_t q);  // q*
@@ -157,6 +158,14 @@ static inline se3_quat_t se3_quat_mul(se3_quat_t a, se3_quat_t b) {
 // =============================================================================
 // Unary operation definitions ------------------------------------------------|
 // =============================================================================
+
+/**
+ * @brief Checks if a quaternion represents a valid rotation in SO(3) (‖q‖ == 1).
+ */
+static inline bool se3_quat_is_valid(se3_quat_t q) {
+    float norm_sq = se3_quat_norm_sqr(q);
+    return fabsf(norm_sq - 1.0f) <= SE3_QUAT_NORM_SQR_TOLERANCE;
+}
 
 static inline float se3_quat_norm_sqr(se3_quat_t q) {
     return se3_quat_dot(q, q);
