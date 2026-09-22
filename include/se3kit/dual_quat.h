@@ -10,10 +10,9 @@
 
 #include "axis_angle.h"
 #include "quat.h"
-
-// TODO:
-// add operations on line.h
-// add operations on cone.h
+#include "line.h"
+#include "plane.h"
+#include "cone.h"
 
 // =============================================================================
 // Constant defines -----------------------------------------------------------|
@@ -63,6 +62,9 @@ static inline se3_dual_quat_t se3_dual_quat_normalize(se3_dual_quat_t dq);      
 // Transforms
 static inline se3_vec3_t se3_dual_quat_transform_vec3(se3_dual_quat_t dq, se3_vec3_t v);    // R * v + t
 static inline se3_vec3_t se3_dual_quat_rotate_vec3(se3_dual_quat_t dq, se3_vec3_t v);       // R * v (no translation)
+static inline se3_line_t  se3_dual_quat_transform_line(se3_dual_quat_t dq, se3_line_t line);
+static inline se3_plane_t se3_dual_quat_transform_plane(se3_dual_quat_t dq, se3_plane_t plane);
+static inline se3_cone_t  se3_dual_quat_transform_cone(se3_dual_quat_t dq, se3_cone_t cone);
 
 // Interpolation, time-stepping
 static inline se3_dual_quat_t se3_dual_quat_sclerp(se3_dual_quat_t a, se3_dual_quat_t b, float blend);  // screw linear interpolation
@@ -234,6 +236,48 @@ static inline se3_vec3_t se3_dual_quat_transform_vec3(se3_dual_quat_t dq, se3_ve
     se3_vec3_t rot_v = se3_quat_rotate_vec3(dq.real, p);
     se3_vec3_t trans = se3_dual_quat_to_translation(dq);
     return se3_vec3_add(rot_v, trans);
+}
+
+/**
+ * @brief Transforms a Plücker line in SE(3).
+ *        d' = R*d
+ *        m' = R*m + t × d'
+ */
+static inline se3_line_t se3_dual_quat_transform_line(se3_dual_quat_t dq, se3_line_t line) {
+    se3_vec3_t d_prime = se3_quat_rotate_vec3(dq.real, line.dir);
+    se3_vec3_t m_prime = se3_quat_rotate_vec3(dq.real, line.moment);
+    se3_vec3_t t = se3_dual_quat_to_translation(dq);
+    
+    return se3_line(d_prime, se3_vec3_add(m_prime, se3_vec3_cross(t, d_prime)));
+}
+
+/**
+ * @brief Transforms a plane in SE(3).
+ *        n' = R*n
+ *        d' = d - (n' ⋅ t)
+ */
+static inline se3_plane_t se3_dual_quat_transform_plane(se3_dual_quat_t dq, se3_plane_t plane) {
+    se3_vec3_t n_prime = se3_quat_rotate_vec3(dq.real, plane.normal);
+    se3_vec3_t t = se3_dual_quat_to_translation(dq);
+    
+    return se3_plane(n_prime, plane.d - se3_vec3_dot(n_prime, t));
+}
+
+/**
+ * @brief Transforms a cone in SE(3).
+ */
+static inline se3_cone_t se3_dual_quat_transform_cone(se3_dual_quat_t dq, se3_cone_t cone) {
+    se3_vec3_t d_prime = se3_quat_rotate_vec3(dq.real, cone.axis.dir);
+    se3_vec3_t m_prime = se3_quat_rotate_vec3(dq.real, cone.axis.moment);
+    se3_vec3_t t = se3_dual_quat_to_translation(dq);
+    
+    se3_line_t new_axis = se3_line(d_prime, se3_vec3_add(m_prime, se3_vec3_cross(t, d_prime)));
+    
+    return (se3_cone_t){
+        .axis = new_axis,
+        .apex_coord = cone.apex_coord + se3_vec3_dot(t, d_prime),
+        .cos_half_angle = cone.cos_half_angle
+    };
 }
 
 // =============================================================================

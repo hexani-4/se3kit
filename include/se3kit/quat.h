@@ -82,6 +82,9 @@ static inline se3_vec3_t se3_quat_to_vec3(se3_quat_t q);                // quate
 static inline se3_axis_angle_t se3_quat_to_axis_angle(se3_quat_t q);    // quaternion to axis angle
 static inline se3_rpy_t se3_quat_to_rpy(se3_quat_t q);                  // quaternion to RPY
 
+// Decomposition
+static inline void se3_quat_decompose_twist_swing(se3_quat_t q, se3_vec3_t twist_axis, float *out_twist_angle, se3_quat_t *out_remaining);
+
 // =============================================================================
 // Helpers --------------------------------------------------------------------|
 // =============================================================================
@@ -398,6 +401,57 @@ static inline se3_rpy_t se3_quat_to_rpy(se3_quat_t q) {
     }
 
     return rpy;
+}
+
+// =============================================================================
+// Decomposition definitions --------------------------------------------------|
+// =============================================================================
+
+/**
+ * @brief Decomposes a rotation into a twist around a specific normalized axis 
+ *        and a remaining swing. 
+ *        Result satisfies: q = remaining * twist (swing-then-twist).
+ *
+ * @param q               The input rotation quaternion.
+ * @param twist_axis      The normalized axis of allowed rotation (e.g., a hinge joint).
+ * @param out_twist_angle Output signed angle of rotation around twist_axis (radians).
+ * @param out_remaining   Output remaining rotation.
+ */
+static inline void se3_quat_decompose_twist_swing(
+    se3_quat_t q, 
+    se3_vec3_t twist_axis, 
+    float *out_twist_angle, 
+    se3_quat_t *out_remaining
+) {
+    se3_vec3_t q_vec = se3_quat_to_vec3(q);
+    
+    // Project the vector part of the quaternion onto the constraint axis
+    float proj = se3_vec3_dot(q_vec, twist_axis);
+
+    // Singularity check: 180-degree rotation strictly orthogonal to the twist axis.
+    // In this state, the twist around our target axis is effectively zero.
+    if (fabsf(q.w) < SE3_QUAT_DIV_MIN && fabsf(proj) < SE3_QUAT_DIV_MIN) {
+        if (out_twist_angle) *out_twist_angle = 0.0f;
+        if (out_remaining)   *out_remaining = q;
+        return;
+    }
+
+    // atan2f(y, x) elegantly recovers the half-angle without requiring normalization or square roots.
+    float half_angle = atan2f(proj, q.w);
+    
+    if (out_twist_angle) {
+        *out_twist_angle = 2.0f * half_angle;
+    }
+
+    if (out_remaining) {
+        // Construct the conjugate of the twist quaternion to extract the remainder
+        float c = cosf(half_angle);
+        float s = sinf(half_angle);
+        se3_quat_t twist_conj = se3_quat(c, -twist_axis.x * s, -twist_axis.y * s, -twist_axis.z * s);
+        
+        // remaining = q * twist^-1
+        *out_remaining = se3_quat_mul(q, twist_conj);
+    }
 }
 
 #endif /* SE3KIT_QUAT_H */

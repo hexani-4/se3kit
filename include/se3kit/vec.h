@@ -53,6 +53,7 @@ static inline float se3_vec3_norm_sqr(se3_vec3_t v);       // v ⋅ v
 static inline float se3_vec3_norm(se3_vec3_t v);            // √(v ⋅ v)
 static inline se3_vec3_t se3_vec3_negate(se3_vec3_t v);     // v * -1
 static inline se3_vec3_t se3_vec3_normalize(se3_vec3_t v);  // v / ‖v‖
+static inline se3_vec3_t se3_vec3_orthogonal(se3_vec3_t v); // Returns a normalized vector orthogonal to v
 
 // =============================================================================
 // Initializer definitions ----------------------------------------------------|
@@ -132,6 +133,24 @@ static inline se3_vec3_t se3_vec3_normalize(se3_vec3_t v) {
 
     float inv_len = 1.0f / sqrtf(len_sqr);
     return se3_vec3_mul_scalar(v, inv_len);
+}
+
+/**
+ * @brief Computes an arbitrary normalized vector orthogonal to @p v.
+ *        Assumes @p v is non-zero.
+ */
+static inline se3_vec3_t se3_vec3_orthogonal(se3_vec3_t v) {
+    if (fabsf(v.x) < 0.9f) {
+        // v is not strongly aligned with X. Cross X axis (1,0,0) with v.
+        // i x v = (0, -v.z, v.y)
+        float inv_len = 1.0f / sqrtf(v.y * v.y + v.z * v.z);
+        return se3_vec3(0.0f, -v.z * inv_len, v.y * inv_len);
+    } else {
+        // v is strongly aligned with X. Cross Y axis (0,1,0) with v.
+        // j x v = (v.z, 0, -v.x)
+        float inv_len = 1.0f / sqrtf(v.x * v.x + v.z * v.z);
+        return se3_vec3(v.z * inv_len, 0.0f, -v.x * inv_len);
+    }
 }
 
 #endif /* SE3KIT_VEC_H */
