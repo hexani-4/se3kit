@@ -49,7 +49,7 @@ static inline float se3_vec3_dot(se3_vec3_t a, se3_vec3_t b);         // a ⋅ b
 static inline se3_vec3_t se3_vec3_cross(se3_vec3_t a, se3_vec3_t b);  // a × b
 
 // Unary operations
-static inline float se3_vec3_norm_sqr(se3_vec3_t v);       // v ⋅ v
+static inline float se3_vec3_norm_sqr(se3_vec3_t v);        // v ⋅ v
 static inline float se3_vec3_norm(se3_vec3_t v);            // √(v ⋅ v)
 static inline se3_vec3_t se3_vec3_negate(se3_vec3_t v);     // v * -1
 static inline se3_vec3_t se3_vec3_normalize(se3_vec3_t v);  // v / ‖v‖

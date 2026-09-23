@@ -16,7 +16,7 @@
 // Constant defines -----------------------------------------------------------|
 // =============================================================================
 
-#define SE3_QUAT_DIV_MIN        (1e-6f)
+#define SE3_QUAT_DIV_MIN        (1e-4f)
 #define SE3_QUAT_DIV_MIN_SQR    (SE3_QUAT_DIV_MIN * SE3_QUAT_DIV_MIN)
 #define SE3_QUAT_DIV_FALLBACK   (se3_quat_identity())
 
